@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DataSource {
+  OPENROUTER
+  HUGGINGFACE
+  MANUAL
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  passwordHash String
+  role         UserRole       @default(USER)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  watchlist    Watchlist[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+model Provider {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String    @unique
+  website   String?
+  logoUrl   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  models    AIModel[]
+
+  @@map("providers")
+}
+
+model AIModel {
+  id                String    @id @default(cuid())
+  slug              String    @unique
+  name              String
+  description       String?
+  providerId        String
+  provider          Provider  @relation(fields: [providerId], references: [id])
+  inputPricePer1M   Decimal?  @db.Decimal(10, 6)
+  outputPricePer1M  Decimal?  @db.Decimal(10, 6)
+  contextWindow     Int?
+  maxOutputTokens   Int?
+  speedTokensPerSec Int?
+  isOpenSource      Boolean   @default(false)
+  isMultimodal      Boolean   @default(false)
+  isDeprecated      Boolean   @default(false)
+  isFeatured        Boolean   @default(false)
+  capabilities      String[]
+  source            DataSource
+  sourceApiId       String
+  syncedAt          DateTime?
+  rawData           Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  watchlist         Watchlist[]
+
+  @@index([providerId])
+  @@index([source])
+  @@index([isOpenSource])
+  @@map("ai_models")
+}
+
+model Watchlist {
+  id      String   @id @default(cuid())
+  userId  String
+  modelId String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  model   AIModel  @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  addedAt DateTime @default(now())
+
+  @@unique([userId, modelId])
+  @@map("watchlist")
+}
