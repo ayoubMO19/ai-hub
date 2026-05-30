@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../modules/prisma/prisma.service';
-import { CacheService } from '../../modules/cache/cache.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
 import { QueryModelsDto } from './dto/query-models.dto';
 
 @Injectable()
